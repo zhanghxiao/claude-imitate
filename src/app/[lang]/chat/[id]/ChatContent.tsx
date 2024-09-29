@@ -186,7 +186,7 @@ export default function ChatContent({ t }: Chat.ChatContentProps) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: "claude-3-5-sonnet",
           key: settings.APIKey,
           secret: settings.secret,
           historyMsgList: [
