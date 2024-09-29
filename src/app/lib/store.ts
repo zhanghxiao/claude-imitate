@@ -84,7 +84,7 @@ export const useUserStore = create<Store.UserState & Store.UserAction>(
   (set) => ({
     user: {
       email: "aixiao@nbplus.com",
-      avatar: "https://mistpe-file.hf.space/uploads/2.png",
+      avatar: "public/2.png",
       name: "ClaudeImitate",
     },
 
