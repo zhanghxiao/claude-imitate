@@ -54,23 +54,16 @@ export default function NewContent({ t }: { t: Global.Dictionary }) {
     }
   };
 
-  const isImg = (filename: string) => {
-    const imgExt = ["png", "jpg", "jpeg", "gif", "bmp", "webp"];
-    const fileExt = filename.split(".").pop();
-    return fileExt && imgExt.includes(fileExt);
-  };
-
   const sendMessageAction = () => {
-    if (content.trim() == "") {
+    if (content.trim() == "" && fileUrlList.length == 0) {
       return;
     }
     let curMsg = content;
 
-    if (fileList.length != 0) {
-      curMsg += fileUrlList
+    if (fileUrlList.length != 0) {
+      curMsg += "\n\n" + fileUrlList
         .map((item) => {
-          // 找出图片
-          if (isImg(item.filename)) {
+          if (item.url.match(/\.(jpeg|jpg|gif|png)$/)) {
             return `![${item.filename}](${item.url})`;
           } else {
             return `[${item.filename}](${item.url})`;
@@ -103,10 +96,8 @@ export default function NewContent({ t }: { t: Global.Dictionary }) {
     ) {
       e.preventDefault();
       sendMessageAction();
-      // 在这里添加发送消息的逻辑
     } else if (e.type === "click") {
       sendMessageAction();
-      // 在这里添加发送消息的逻辑
     }
   };
 
@@ -114,7 +105,6 @@ export default function NewContent({ t }: { t: Global.Dictionary }) {
     const formData = new FormData();
     formData.append("file", file, file.name);
     formData.append("filePostUrl", settings.filePostUrl);
-    formData.append("secret", settings.secret);
 
     setSendFileLoading(true);
     try {
@@ -179,6 +169,7 @@ export default function NewContent({ t }: { t: Global.Dictionary }) {
 
   const onRemoveFile = (file: File) => {
     setFileList((prev) => prev.filter((f) => f !== file));
+    setFileUrlList((prev) => prev.filter((item) => item.filename !== file.name));
   };
 
   useEffect(() => {
@@ -193,7 +184,6 @@ export default function NewContent({ t }: { t: Global.Dictionary }) {
     e.preventDefault();
     e.stopPropagation();
     dragCounter.current++;
-    console.log("进入：", dragCounter.current);
     
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
       setIsDragging(true);
@@ -204,7 +194,6 @@ export default function NewContent({ t }: { t: Global.Dictionary }) {
     e.preventDefault();
     e.stopPropagation();
     dragCounter.current--;
-    console.log("离开：", dragCounter.current);
     
     if (dragCounter.current == 0) {
       setIsDragging(false);
@@ -282,11 +271,11 @@ export default function NewContent({ t }: { t: Global.Dictionary }) {
                 onChange={handleChange}
                 className="w-full outline-none scrollbar-thin scrollbar-thumb-orange-200 scrollbar-track-transparent resize-none bg-transparent scrollbar"
                 placeholder={t.new.placeholder}
-                style={{ minHeight: "50px", maxHeight: "360px" }} // 设置一个最小高度
+                style={{ minHeight: "50px", maxHeight: "360px" }}
               />
             </div>
-            <div className="text-sm relative z-10">
-              <div className="">
+            <div className="text-sm relative z-10 flex justify-between items-center mt-2">
+              <div>
                 <DropdownMenu
                   items={settings.models}
                   callback={(item) => chooseModel(item)}
@@ -295,6 +284,22 @@ export default function NewContent({ t }: { t: Global.Dictionary }) {
                   {settings.currentDisplayModel}
                 </DropdownMenu>
               </div>
+              <HintText hintText={t.new.upload_desc}>
+                <div
+                  className="text-sm text-gray-500 font-bold cursor-pointer hover:bg-gray-800/10 rounded-lg p-2 flex items-center justify-center gap-1"
+                  onClick={() => {
+                    document.querySelector("input[type='file']")?.click();
+                  }}
+                >
+                  <LinkOutlined className="text-lg" /> {t.new.upload_file}
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={(e) => onAddFile(e)}
+                  />
+                </div>
+              </HintText>
             </div>
           </div>
           <div
@@ -306,8 +311,8 @@ export default function NewContent({ t }: { t: Global.Dictionary }) {
           {/* 文件上传 */}
           <div
             className={`relative pt-1  px-2 w-[96%] mx-auto -top-5 bg-orange-200/20 rounded-xl rounded-t-none -z-10 
-					border border-orange-300 transition-all duration-300
-					${fileList.length == 0 ? "max-h-[3.25rem]" : "max-h-[18rem]"}`}
+          border border-orange-300 transition-all duration-300
+          ${fileList.length == 0 ? "max-h-[3.25rem]" : "max-h-[18rem]"}`}
           >
             <div className=" flex items-center justify-between h-12 select-none">
               <div className="text-sm text-gray-500">
@@ -315,23 +320,6 @@ export default function NewContent({ t }: { t: Global.Dictionary }) {
                   ? t.new.file_desc
                   : `${fileList.length} ${t.new.file_added}`}
               </div>
-              <HintText hintText={t.new.upload_desc}>
-                <div
-                  className={`text-sm text-gray-500 font-bold cursor-pointer hover:bg-gray-800/10 rounded-lg p-2 flex items-center justify-center
-						gap-1`}
-                  onClick={() => {
-                    document.querySelector("input")?.click();
-                  }}
-                >
-                  <LinkOutlined className="text-lg" /> {t.new.upload_file}
-                  <input
-                    type="file"
-                    className="hidden"
-                    multiple
-                    onChange={(e) => onAddFile(e)}
-                  />
-                </div>
-              </HintText>
             </div>
             <div className="p-2 pt-0 grid grid-cols-5 relative scrollbar pb-3 gap-3">
               {fileList.map((file, index) => {
@@ -349,16 +337,16 @@ export default function NewContent({ t }: { t: Global.Dictionary }) {
                       >
                         <div
                           className={`h-20 cursor-pointer relative w-full p-2 rounded-lg text-md text-gray-700 flex items-center justify-center hover:border hover:border-blue-300
-										 drop-shadow-md shadow-blue-400`}
+                       drop-shadow-md shadow-blue-400`}
                           style={{
                             background:
                               "linear-gradient(to bottom, white, #e6f7ff)",
                           }}
                         >
-                          {isImg(fullFilename) &&
+                          {file.type.startsWith('image/') &&
                           !(sendFileLoading && index == fileList.length - 1) ? (
                             <img
-                              src={fileUrlList[index].url}
+                              src={URL.createObjectURL(file)}
                               alt={fileName}
                               className="w-full h-full object-cover"
                             />
@@ -369,97 +357,97 @@ export default function NewContent({ t }: { t: Global.Dictionary }) {
                           )}
                           <div
                             className={`absolute -bottom-2 bg-blue-500/90 drop-shadow-lg shadow-blue-400 h-5 rounded-lg px-3 py-1
-											 text-white justify-center items-center flex font-bold text-xs`}
+                         text-white justify-center items-center flex font-bold text-xs`}
                           >
                             {fileExt}
                           </div>
                           <div
                             className={`absolute -top-2 -left-2 w-5 h-5 p-1  bg-orange-200 flex items-center justify-center text-gray-500 rounded-full border border-gray-300
-												hover:bg-orange-700 hover:text-white transition-all duration-300 rotate-45 font-bold`}
-                            onClick={() => onRemoveFile(file)}
-                          >
-                            <PlusOutlined />
+                            hover:bg-orange-700 hover:text-white transition-all duration-300 rotate-45 font-bold`}
+                            onClick={() =>onRemoveFile(file)}
+                            >
+                              <PlusOutlined />
+                            </div>
                           </div>
-                        </div>
-                      </Spin>
-                    </HintText>
-                  </div>
-                );
-              })}
+                        </Spin>
+                      </HintText>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
-        {/* 最近对话 */}
-        <div className="w-full">
-          <div className="flex justify-between text-sm text-black/80 font-bold">
-            <div className="flex items-center gap-2">
-              <CommentOutlined className="text-blue-400" /> {t.new.recent_chat}{" "}
-              <div
-                className={`cursor-pointer hover:bg-gray-800/10 rounded-lg p-1 h-6 flex items-center justify-center scale-90 text-gray-500 z-0`}
-                onClick={() => setShowRecents(!showRecents)}
-              >
-                <UpOutlined
-                  className={`transform transition-transform duration-300 ease-in-out select-none  ${
-                    showRecents ? "rotate-180" : ""
-                  }`}
-                />
-                {showRecents ? (
-                  ""
-                ) : (
-                  <span className="ml-1 transition-opacity duration-300 ease-in-out">
-                    {t.new.expand}
+          {/* 最近对话 */}
+          <div className="w-full">
+            <div className="flex justify-between text-sm text-black/80 font-bold">
+              <div className="flex items-center gap-2">
+                <CommentOutlined className="text-blue-400" /> {t.new.recent_chat}{" "}
+                <div
+                  className={`cursor-pointer hover:bg-gray-800/10 rounded-lg p-1 h-6 flex items-center justify-center scale-90 text-gray-500 z-0`}
+                  onClick={() => setShowRecents(!showRecents)}
+                >
+                  <UpOutlined
+                    className={`transform transition-transform duration-300 ease-in-out select-none  ${
+                      showRecents ? "rotate-180" : ""
+                    }`}
+                  />
+                  {showRecents ? (
+                    ""
+                  ) : (
+                    <span className="ml-1 transition-opacity duration-300 ease-in-out">
+                      {t.new.expand}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <Link href="/recents">
+                <div className="flex items-center gap-1 group cursor-pointer font-medium">
+                  <span className="group-hover:underline">{t.new.show_all}</span>
+                  <span className="scale-85">
+                    <ArrowRightOutlined className="text-sm" />
                   </span>
-                )}
-              </div>
+                </div>
+              </Link>
             </div>
-            <Link href="/recents">
-              <div className="flex items-center gap-1 group cursor-pointer font-medium">
-                <span className="group-hover:underline">{t.new.show_all}</span>
-                <span className="scale-85">
-                  <ArrowRightOutlined className="text-sm" />
-                </span>
-              </div>
-            </Link>
-          </div>
-          <div
-            className={` mt-4 overflow-hidden ${
-              chatData.length == 0 ? "h-[200px]" : "grid grid-cols-3 gap-4"
-            }`}
-          >
-            {chatData.length == 0 && (
-              <Empty
-                description={t.slider.no_history}
-                style={{ width: "100%", height: "100%" }}
-              />
-            )}
-            {chatData.length != 0 &&
-              chatData.slice(0, 6).map((item, index) => (
-                <Link href={`/chat/${item.id}`} key={item.id}>
-                  <div
-                    key={index}
-                    className={`flex flex-col justify-between cursor-pointer p-3 border rounded-md shadow-sm hover:drop-shadow-md
-              border-gray-200 bg-gradient-to-b from-white/30 to-white/10 hover:from-white/80 hover:to-white/10 transition-all duration-300 ease-in-out
-              ${
-                showRecents
-                  ? "max-h-[200px] opacity-100"
-                  : "max-h-0 opacity-0 overflow-hidden"
+            <div
+              className={` mt-4 overflow-hidden ${
+                chatData.length == 0 ? "h-[200px]" : "grid grid-cols-3 gap-4"
               }`}
-                  >
-                    <div className="">
-                      <CommentOutlined />
+            >
+              {chatData.length == 0 && (
+                <Empty
+                  description={t.slider.no_history}
+                  style={{ width: "100%", height: "100%" }}
+                />
+              )}
+              {chatData.length != 0 &&
+                chatData.slice(0, 6).map((item, index) => (
+                  <Link href={`/chat/${item.id}`} key={item.id}>
+                    <div
+                      key={index}
+                      className={`flex flex-col justify-between cursor-pointer p-3 border rounded-md shadow-sm hover:drop-shadow-md
+                border-gray-200 bg-gradient-to-b from-white/30 to-white/10 hover:from-white/80 hover:to-white/10 transition-all duration-300 ease-in-out
+                ${
+                  showRecents
+                    ? "max-h-[200px] opacity-100"
+                    : "max-h-0 opacity-0 overflow-hidden"
+                }`}
+                    >
+                      <div className="">
+                        <CommentOutlined />
+                      </div>
+                      <div className="mt-2 text-sm font-medium truncate">
+                        {item.title}
+                      </div>
+                      <div className="mt-2 text-xs text-gray-500">
+                        {new Date(item.createdAt).toLocaleString()}
+                      </div>
                     </div>
-                    <div className="mt-2 text-sm font-medium truncate">
-                      {item.title}
-                    </div>
-                    <div className="mt-2 text-xs text-gray-500">
-                      {new Date(item.createdAt).toLocaleString()}
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                ))}
+            </div>
           </div>
         </div>
-      </div>
-    </>
-  );
-}
+      </>
+    );
+  }

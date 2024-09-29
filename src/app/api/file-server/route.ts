@@ -3,14 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const file = formData.get("file") as File;
-  const secret = formData.get("secret") as string;
-  let filePostUrl = formData.get("filePostUrl") as string;
+  let filePostUrl = process.env.FILE_POST_URL || "";
 
-  if (!filePostUrl && secret == process.env.SECRET_KEY) {
-    filePostUrl = process.env.FILE_POST_URL || "";
-  } else if (!filePostUrl) {
+  if (!filePostUrl) {
     return NextResponse.json(
-      { msg: { error: "没有配置文件上传接口，请配置 文件接口 或者 密钥" } },
+      { msg: { error: "没有配置文件上传接口，请配置 FILE_POST_URL 环境变量" } },
       { status: 401 }
     );
   }
@@ -25,9 +22,6 @@ export async function POST(request: NextRequest) {
   const serverFormData = new FormData();
   serverFormData.append("file", file, file.name);
 
-  if (!filePostUrl) {
-    throw new Error("环境变量中未定义 FILE_POST_URL");
-  }
   try {
     const response = await fetch(filePostUrl, {
       method: "POST",
