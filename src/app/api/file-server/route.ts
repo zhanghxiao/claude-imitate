@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const file = formData.get("file") as File;
-  let filePostUrl = process.env.FILE_POST_URL || "";
+  const filePostUrl = process.env.FILE_POST_URL || "";
 
   if (!filePostUrl) {
     return NextResponse.json(
