@@ -83,8 +83,8 @@ export const useSettingStore = create<Store.SettingState & Store.SettingAction>(
 export const useUserStore = create<Store.UserState & Store.UserAction>(
   (set) => ({
     user: {
-      email: "bashirian76100@gmail.com",
-      avatar: "https://avatars.githubusercontent.com/u/71807854?s=8100&v=4",
+      email: "aixiao@nbplus.com",
+      avatar: "https://mistpe-file.hf.space/uploads/a0648c97-d48e-474d-8e40-cc255ef57c28.png",
       name: "ClaudeImitate",
     },
 
